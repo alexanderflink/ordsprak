@@ -1,11 +1,27 @@
 use crate::token::Token;
+use core::fmt;
 
 pub struct Scanner {
     source: String,
-    start: u32,
-    current: u32,
+    start: usize,
+    current: usize,
     tokens: Vec<Token>,
 }
+
+#[derive(Debug)]
+pub enum ScannerError {
+    SyntaxError,
+}
+
+impl fmt::Display for ScannerError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ScannerError::SyntaxError => write!(f, "SyntaxError!"),
+        }
+    }
+}
+
+impl std::error::Error for ScannerError {}
 
 impl Scanner {
     pub fn new(source_code: &str) -> Self {
@@ -17,22 +33,28 @@ impl Scanner {
         }
     }
 
-    pub fn scan(&mut self) {
+    pub fn scan(&mut self) -> Result<(), ScannerError> {
         let chars = self.source.chars();
-        // let mut current_chars = Vec::new();
-        let mut current_lexeme = String::new();
+        let mut scanning_chars = String::new();
 
         for c in chars {
-            current_lexeme.push(c);
-            println!("current_lexeme: {}", current_lexeme);
+            scanning_chars.push(c);
 
-            if let Some(token) = Token::from_string(&current_lexeme, &self.tokens) {
-                println!("Found token: {:?}", token);
+            // only evaluate tokens when we reach a space character
+            if c != ' ' {
+                continue;
+            }
+
+            println!("scanning_chars: {}", scanning_chars);
+
+            if let Some(token) = Token::from_string(&scanning_chars.trim()) {
+                scanning_chars.clear();
                 self.tokens.push(token);
-                current_lexeme = String::new();
             }
         }
 
         println!("Found tokens: {:?}", self.tokens);
+
+        Ok(())
     }
 }

@@ -1,9 +1,7 @@
 use regex::Regex;
-use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
 
-#[derive(Debug, EnumIter, Clone)]
-pub enum Token {
+#[derive(Debug)]
+pub enum TokenType {
     // Single character tokens
     Dot,
 
@@ -14,74 +12,58 @@ pub enum Token {
 
     // Keywords
     Skriv,
+    Spara,
 
     I,
 
     Eof,
 }
 
+#[derive(Debug)]
+pub struct Token {
+    pub token_type: TokenType,
+    pub content: String,
+    pub length: usize,
+}
+
 impl Token {
-    pub fn pattern(&self) -> Regex {
-        match self {
-            Token::Dot => Regex::new(r"\."),
-            Token::String => Regex::new("\"[^\"]*\""),
-            Token::Skriv => Regex::new(r"Skriv"),
-            Token::Eof => Regex::new("\n"),
-            Token::Identifier => Regex::new(".*"),
-        }
-        .expect("Failed to parse token regex")
-    }
+    // This could probably be done by iterating over the enum variants instead
+    pub fn from_string(source: &str) -> Option<Token> {
+        match source {
+            "Spara" | "spara" => Some(Token {
+                token_type: TokenType::Spara,
+                content: source.to_owned(),
+                length: source.chars().count(),
+            }),
+            "Skriv" | "skriv" => Some(Token {
+                token_type: TokenType::Skriv,
+                content: source.to_owned(),
+                length: source.chars().count(),
+            }),
+            "I" | "i" => Some(Token {
+                token_type: TokenType::I,
+                content: source.to_owned(),
+                length: source.chars().count(),
+            }),
+            "." => Some(Token {
+                token_type: TokenType::Dot,
+                content: source.to_owned(),
+                length: source.chars().count(),
+            }),
+            _ => {
+                let string_regex =
+                    Regex::new("^\"(.*)\"$").expect("Failed to compile String regex");
 
-    pub fn matches(&self, string: &String, previous_tokens: &Vec<Token>) -> bool {
-        match self {
-            Token::Dot => Regex::new(r"\.")
-                .expect("Failed to parse regex")
-                .find(string)
-                .is_some(),
-            Token::String => Regex::new("\"[^\"]*\"")
-                .expect("Failed to parse regex")
-                .find(string)
-                .is_some(),
-            Token::Skriv => Regex::new(r"Skriv")
-                .expect("Failed to parse regex")
-                .find(string)
-                .is_some(),
-            Token::Eof => Regex::new("\n")
-                .expect("Failed to parse regex")
-                .find(string)
-                .is_some(),
-            Token::Identifier => {
-                let is_identifier = match previous_tokens.last() {
-                    Some(Token::I) => true,
-                    Some(Token::Skriv) => true,
-                    None => false,
-                };
-
-                Regex::new(".*")
-                    .expect("Failed to parse regex")
-                    .find(string)
-                    .is_some()
-            }
-            Token::I => Regex::new(" i ")
-                .expect("Failed to parse regex")
-                .find(string)
-                .is_some(),
-        }
-    }
-
-    pub fn from_string(string: &String, previous_tokens: &Vec<Token>) -> Option<Token> {
-        let all_tokens = Token::iter();
-
-        for token in all_tokens {
-            // if let Some(_) = token.pattern().find(string) {
-            //     return Some(token.clone());
-            // }
-
-            if token.matches(string, previous_tokens) {
-                return Some(token.clone());
+                if Regex::is_match(&string_regex, source) {
+                    Some(Token {
+                        token_type: TokenType::String,
+                        content: source.to_owned(),
+                        length: source.chars().count(),
+                    })
+                } else {
+                    None
+                }
             }
         }
-
-        None
     }
 }
