@@ -53,16 +53,26 @@ impl Token {
             _ => {
                 let string_regex =
                     Regex::new("^\"(.*)\"$").expect("Failed to compile String regex");
+                let identifier_regex =
+                    Regex::new("^\'(.*)\'$").expect("Failed to compile Identifier regex");
 
                 if Regex::is_match(&string_regex, source) {
-                    Some(Token {
+                    return Some(Token {
                         token_type: TokenType::String,
                         content: source.to_owned(),
                         length: source.chars().count(),
-                    })
-                } else {
-                    None
+                    });
                 }
+
+                if Regex::is_match(&identifier_regex, source) {
+                    return Some(Token {
+                        token_type: TokenType::Identifier,
+                        content: source.to_owned(),
+                        length: source.chars().count(),
+                    });
+                }
+
+                None
             }
         }
     }

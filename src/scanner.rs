@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::token::{Token, TokenType};
 use core::fmt;
 
 pub struct Scanner {
@@ -40,12 +40,7 @@ impl Scanner {
         for c in chars {
             scanning_chars.push(c);
 
-            // only evaluate tokens when we reach a space character
-            if c != ' ' {
-                continue;
-            }
-
-            println!("scanning_chars: {}", scanning_chars);
+            // println!("scanning_chars: {}", scanning_chars);
 
             if let Some(token) = Token::from_string(&scanning_chars.trim()) {
                 scanning_chars.clear();
