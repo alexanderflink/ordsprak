@@ -1,4 +1,4 @@
-use crate::token::{Token, TokenType};
+use crate::token::Token;
 use core::fmt;
 
 pub struct Scanner {
@@ -33,7 +33,7 @@ impl Scanner {
         }
     }
 
-    pub fn scan(&mut self) -> Result<(), ScannerError> {
+    pub fn scan(&mut self) -> Result<Vec<Token>, ScannerError> {
         let chars = self.source.chars();
         let mut scanning_chars = String::new();
 
@@ -50,6 +50,6 @@ impl Scanner {
 
         println!("Found tokens: {:?}", self.tokens);
 
-        Ok(())
+        Ok(self.tokens.clone())
     }
 }

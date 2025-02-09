@@ -1,12 +1,16 @@
 use regex::Regex;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
     // Single character tokens
     Dot,
 
+    // Operators
+    Plus,
+
     // Literals
     String,
+    Number,
 
     Identifier,
 
@@ -19,7 +23,7 @@ pub enum TokenType {
     Eof,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub content: String,
@@ -40,6 +44,11 @@ impl Token {
                 content: source.to_owned(),
                 length: source.chars().count(),
             }),
+            "Plus" | "plus" => Some(Token {
+                token_type: TokenType::Plus,
+                content: source.to_owned(),
+                length: source.chars().count(),
+            }),
             "I" | "i" => Some(Token {
                 token_type: TokenType::I,
                 content: source.to_owned(),
@@ -53,8 +62,13 @@ impl Token {
             _ => {
                 let string_regex =
                     Regex::new("^\"(.*)\"$").expect("Failed to compile String regex");
+
                 let identifier_regex =
                     Regex::new("^\'(.*)\'$").expect("Failed to compile Identifier regex");
+
+                let number_regex =
+                    Regex::new("^([0-9]|ett|två|tre|fyra|fem|sex|sju|åtta|nio|tio)$")
+                        .expect("Failed to compile Identifier regex");
 
                 if Regex::is_match(&string_regex, source) {
                     return Some(Token {
@@ -67,6 +81,14 @@ impl Token {
                 if Regex::is_match(&identifier_regex, source) {
                     return Some(Token {
                         token_type: TokenType::Identifier,
+                        content: source.to_owned(),
+                        length: source.chars().count(),
+                    });
+                }
+
+                if Regex::is_match(&number_regex, source) {
+                    return Some(Token {
+                        token_type: TokenType::Number,
                         content: source.to_owned(),
                         length: source.chars().count(),
                     });
