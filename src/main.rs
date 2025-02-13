@@ -23,7 +23,10 @@ fn try_main() -> Result<(), Box<dyn error::Error>> {
         Mode::File(file_path) => {
             let contents: String = fs::read_to_string(&file_path)?;
 
-            run(&contents)
+            match run(&contents) {
+                Ok(_) => Ok(()),
+                Err(error) => Err(error.to_owned()),
+            }
         }
         Mode::Interactive => {
             // start interactive mode
