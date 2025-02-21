@@ -88,38 +88,62 @@ fn parse_assignment(input: &str) -> IResult<&str, Statement> {
 }
 
 fn parse_expression(input: &str) -> IResult<&str, Expression> {
-    let (input, left) = parse_term.parse(input)?;
-    let (input, op) = opt((space1, parse_operator)).parse(input)?;
+    parse_add_sub(input)
+}
+
+fn parse_add_sub(input: &str) -> IResult<&str, Expression> {
+    let (input, left) = parse_mul_div(input)?;
+
+    let (input, op) = opt((space1, alt((tag("plus"), tag("minus"))))).parse(input)?;
+
     if let Some((_, op)) = op {
+        let operator = match op {
+            "plus" => Operator::Add,
+            "minus" => Operator::Subtract,
+            _ => unreachable!(),
+        };
+
         let (input, _) = space1(input)?;
-        let (input, right) = parse_expression(input)?;
+        let (input, right) = parse_add_sub(input)?;
+
+        Ok((
+            input,
+            Expression::Operation {
+                left: Box::new(left),
+                op: operator,
+                right: Box::new(right),
+            },
+        ))
+    } else {
+        Ok((input, left))
+    }
+}
+
+fn parse_mul_div(input: &str) -> IResult<&str, Expression> {
+    let (input, left) = parse_term(input)?;
+    let (input, op) = opt((space1, alt((tag("gånger"), tag("delat med"))))).parse(input)?;
+
+    if let Some((_, op)) = op {
+        let operator = match op {
+            "gånger" => Operator::Multiply,
+            "delat med" => Operator::Divide,
+            _ => unreachable!(),
+        };
+
+        let (input, _) = space1(input)?;
+        let (input, right) = parse_mul_div(input)?;
 
         Ok((
             input,
             Expression::Operation {
                 left: Box::new(Expression::Term(left)),
-                op,
+                op: operator,
                 right: Box::new(right),
             },
         ))
     } else {
         Ok((input, Expression::Term(left)))
     }
-}
-
-fn parse_operator(input: &str) -> IResult<&str, Operator> {
-    let (input, output) =
-        alt((tag("plus"), tag("minus"), tag("gånger"), tag("delat med"))).parse(input)?;
-
-    let operator = match output {
-        "plus" => Operator::Add,
-        "minus" => Operator::Subtract,
-        "gånger" => Operator::Multiply,
-        "delat med" => Operator::Divide,
-        _ => unreachable!(),
-    };
-
-    Ok((input, operator))
 }
 
 fn parse_term(input: &str) -> IResult<&str, Term> {
