@@ -19,6 +19,9 @@ impl Expression {
                     Operator::Subtract => left - right,
                     Operator::Multiply => left * right,
                     Operator::Divide => left / right,
+                    Operator::Equals => VariableValue::Bool(left == right),
+                    Operator::GreaterThan => VariableValue::Bool(left > right),
+                    Operator::LessThan => VariableValue::Bool(left < right),
                 }
             }
         }
@@ -38,6 +41,7 @@ impl Term {
                 match value {
                     VariableValue::Integer(number) => VariableValue::Integer(*number),
                     VariableValue::String(string) => VariableValue::String(string.clone()),
+                    VariableValue::Bool(boolean) => VariableValue::Bool(*boolean),
                 }
             }
         }
@@ -48,18 +52,18 @@ pub struct Interpreter {
     variables: HashMap<String, VariableValue>,
 }
 
+#[derive(PartialEq, PartialOrd)]
 pub enum VariableValue {
     Integer(i64),
     String(String),
+    Bool(bool),
 }
 
 impl Add for VariableValue {
     fn add(self, other: Self) -> Self {
         match (self, other) {
             (Self::Integer(a), Self::Integer(b)) => Self::Integer(a + b),
-            (Self::Integer(a), Self::String(b)) => Self::String(format!("{}{}", a, b)),
-            (Self::String(a), Self::Integer(b)) => Self::String(format!("{}{}", a, b)),
-            (Self::String(a), Self::String(b)) => Self::String(format!("{}{}", a, b)),
+            (a, b) => Self::String(format!("{}{}", a, b)),
         }
     }
 
@@ -109,6 +113,9 @@ impl Display for VariableValue {
         match self {
             VariableValue::Integer(number) => write!(f, "{}", number),
             VariableValue::String(string) => write!(f, "{}", string),
+            VariableValue::Bool(boolean) => {
+                write!(f, "{}", if *boolean { "sant" } else { "falskt" })
+            }
         }
     }
 }
@@ -147,6 +154,7 @@ impl Interpreter {
                 let if_true = match if_value {
                     VariableValue::Integer(number) => number > 0,
                     VariableValue::String(string) => !string.is_empty(),
+                    VariableValue::Bool(boolean) => boolean,
                 };
 
                 if if_true {

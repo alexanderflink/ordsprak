@@ -3,8 +3,9 @@ use nom::{
     bytes::complete::{tag, tag_no_case, take_while1},
     character::complete::{multispace0, multispace1, space1},
     combinator::{cut, map, opt},
+    error::ContextError,
     multi::{many1, separated_list1},
-    sequence::{delimited, terminated},
+    sequence::{delimited, preceded, terminated},
     IResult, Parser as NomParser,
 };
 
@@ -49,6 +50,9 @@ pub enum Operator {
     Subtract,
     Multiply,
     Divide,
+    Equals,
+    GreaterThan,
+    LessThan,
 }
 
 const NUMBERS: [&str; 11] = [
@@ -118,6 +122,7 @@ fn parse_if(input: &str) -> IResult<&str, Statement> {
     .parse(input)?;
 
     // else statement
+    // TODO: move this to a separate parser for readability
     let (input, _) = tag("annars")(input)?;
     let (input, _) = space1(input)?;
 
@@ -142,7 +147,42 @@ fn parse_if(input: &str) -> IResult<&str, Statement> {
 }
 
 fn parse_expression(input: &str) -> IResult<&str, Expression> {
-    parse_add_sub(input)
+    parse_comparison(input)
+}
+
+fn parse_comparison(input: &str) -> IResult<&str, Expression> {
+    let (input, left) = parse_add_sub(input)?;
+    let (input, operator) = opt(delimited(
+        space1,
+        preceded(
+            tag("är "),
+            alt((tag("lika med"), tag("större än"), tag("mindre än"))),
+        ),
+        space1,
+    ))
+    .parse(input)?;
+
+    if let Some(operator) = operator {
+        let (input, right) = parse_expression(input)?;
+
+        let op = match operator {
+            "lika med" => Operator::Equals,
+            "större än" => Operator::GreaterThan,
+            "mindre än" => Operator::LessThan,
+            input => panic!("{} är inte en jämförelse!", input),
+        };
+
+        Ok((
+            input,
+            Expression::Operation {
+                left: Box::new(left),
+                op,
+                right: Box::new(right),
+            },
+        ))
+    } else {
+        Ok((input, left))
+    }
 }
 
 fn parse_add_sub(input: &str) -> IResult<&str, Expression> {
@@ -154,7 +194,7 @@ fn parse_add_sub(input: &str) -> IResult<&str, Expression> {
         let operator = match op {
             "plus" => Operator::Add,
             "minus" => Operator::Subtract,
-            _ => unreachable!(),
+            input => panic!("{} är inte plus eller minus!", input),
         };
 
         let (input, _) = space1(input)?;
