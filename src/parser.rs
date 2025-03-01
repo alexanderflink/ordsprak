@@ -1,14 +1,14 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag, tag_no_case, take_while1},
-    character::complete::{multispace0, space1},
-    combinator::{cut, opt},
-    multi::many1,
-    sequence::delimited,
+    character::complete::{multispace0, multispace1, space1},
+    combinator::{cut, map, opt},
+    multi::{many1, separated_list1},
+    sequence::{delimited, terminated},
     IResult, Parser as NomParser,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Statement {
     Assignment {
         variable: Term,
@@ -17,9 +17,16 @@ pub enum Statement {
     Print {
         expression: Expression,
     },
+    If {
+        if_expression: Expression,
+        if_statements: Vec<Statement>,
+        // else_if_expression: Expression,
+        // else_if_statement: Box<Statement>,
+        else_statements: Vec<Statement>,
+    },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expression {
     Term(Term),
     Operation {
@@ -29,14 +36,14 @@ pub enum Expression {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Term {
     Number(i64),
     String(String),
     Variable(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operator {
     Add,
     Subtract,
@@ -49,21 +56,24 @@ const NUMBERS: [&str; 11] = [
 ];
 
 pub fn parse(source_code: &str) -> Result<Vec<Statement>, nom::Err<nom::error::Error<&str>>> {
-    let (_, output) = many1(parse_statement).parse(source_code)?;
+    // TODO: use nom::terminated here instead of map
+    let (_, statements) = many1(map(
+        (parse_statement, cut(tag(".")), multispace0),
+        |(statement, _, _)| statement,
+    ))
+    .parse(source_code)?;
 
-    Ok(output)
+    Ok(statements)
 }
 
 fn parse_statement(input: &str) -> IResult<&str, Statement> {
-    let (input, output) = alt((parse_print, parse_assignment)).parse(input)?;
-    let (input, _) = cut(tag(".")).parse(input)?;
-    let (input, _) = multispace0(input)?;
+    let (input, output) = alt((parse_print, parse_assignment, parse_if)).parse(input)?;
 
     Ok((input, output))
 }
 
 fn parse_print(input: &str) -> IResult<&str, Statement> {
-    let (input, _) = tag("Skriv")(input)?;
+    let (input, _) = tag_no_case("skriv")(input)?;
     let (input, _) = space1(input)?;
     let (input, expression) = parse_expression(input)?;
 
@@ -71,18 +81,62 @@ fn parse_print(input: &str) -> IResult<&str, Statement> {
 }
 
 fn parse_assignment(input: &str) -> IResult<&str, Statement> {
-    let (input, _) = tag("Spara").parse(input)?;
+    let (input, _) = tag_no_case("spara").parse(input)?;
     let (input, _) = space1(input)?;
     let (input, expression) = parse_expression(input)?;
     let (input, _) = space1(input)?;
     let (input, _) = tag("i")(input)?;
     let (input, _) = space1(input)?;
     let (input, variable) = parse_variable(input)?;
+
     Ok((
         input,
         Statement::Assignment {
             variable,
             expression,
+        },
+    ))
+}
+
+fn parse_if(input: &str) -> IResult<&str, Statement> {
+    // if expression
+    let (input, _) = tag_no_case("om")(input)?;
+    let (input, _) = space1(input)?;
+    let (input, if_expression) = parse_expression(input)?;
+    let (input, _) = tag(",")(input)?;
+    let (input, _) = opt(multispace1).parse(input)?;
+
+    // if statements
+    let (input, if_statements) = many1(map(
+        (
+            parse_statement,
+            alt((tag(","), tag(" och"))),
+            opt(multispace1),
+        ),
+        |(statement, _, _)| statement,
+    ))
+    .parse(input)?;
+
+    // else statement
+    let (input, _) = tag("annars")(input)?;
+    let (input, _) = space1(input)?;
+
+    let (input, else_statements) = separated_list1(
+        delimited(
+            opt(multispace1),
+            alt((tag(","), tag("och"))),
+            opt(multispace1),
+        ),
+        parse_statement,
+    )
+    .parse(input)?;
+
+    Ok((
+        input,
+        Statement::If {
+            if_expression,
+            if_statements,
+            else_statements,
         },
     ))
 }

@@ -91,7 +91,12 @@ impl Mul for VariableValue {
 impl Div for VariableValue {
     fn div(self, other: Self) -> Self {
         match (self, other) {
-            (Self::Integer(a), Self::Integer(b)) => Self::Integer(a / b),
+            (Self::Integer(a), Self::Integer(b)) => {
+                if b == 0 {
+                    panic!("Kan inte dela med noll!")
+                }
+                Self::Integer(a / b)
+            }
             _ => panic!("Kan inte dividera olika typer av värden"),
         }
     }
@@ -131,6 +136,24 @@ impl Interpreter {
             },
             Statement::Print { expression } => {
                 println!("{}", expression.evaluate(&self.variables));
+            }
+            Statement::If {
+                if_expression,
+                if_statements,
+                else_statements,
+            } => {
+                let if_value = if_expression.evaluate(&self.variables);
+
+                let if_true = match if_value {
+                    VariableValue::Integer(number) => number > 0,
+                    VariableValue::String(string) => !string.is_empty(),
+                };
+
+                if if_true {
+                    self.interpret(if_statements.clone());
+                } else {
+                    self.interpret(else_statements.clone());
+                }
             }
         });
     }
