@@ -110,31 +110,28 @@ fn parse_if(input: &str) -> IResult<&str, Statement> {
     let (input, _) = tag(",")(input)?;
     let (input, _) = opt(multispace1).parse(input)?;
 
+    // TODO: move these separated_list into parser for readability
     // if statements
-    let (input, if_statements) = many1(map(
-        (
-            parse_statement,
-            alt((tag(","), tag(" och"))),
-            opt(multispace1),
-        ),
-        |(statement, _, _)| statement,
-    ))
-    .parse(input)?;
-
-    // else statement
-    // TODO: move this to a separate parser for readability
-    let (input, _) = tag("annars")(input)?;
-    let (input, _) = space1(input)?;
-
-    let (input, else_statements) = separated_list1(
-        delimited(
-            opt(multispace1),
-            alt((tag(","), tag("och"))),
-            opt(multispace1),
-        ),
+    let (input, if_statements) = separated_list1(
+        delimited(multispace0, tag(","), multispace0),
         parse_statement,
     )
     .parse(input)?;
+
+    // else statement
+    let (input, else_statements) = opt(preceded(
+        (tag(","), multispace0, tag("annars"), space1), // , annars
+        separated_list1(
+            delimited(multispace0, tag(","), multispace0),
+            parse_statement,
+        ),
+    ))
+    .parse(input)?;
+
+    let else_statements = match else_statements {
+        Some(else_statements) => else_statements,
+        None => Vec::new(),
+    };
 
     Ok((
         input,
