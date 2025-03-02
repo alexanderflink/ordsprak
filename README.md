@@ -25,13 +25,12 @@ Skriv "Hej, jag heter " plus namn plus "!".
 Ett villkor är en mening som börjar med "Om", där villkoret kommer först, och
 resultatet sedan.
 ```
-Om ett är större än noll, skriv "Ett är större än noll".
+Om lådan är större än noll, skriv "Lådan är större än noll".
 ```
 
 Villkor kan också ha ett resultat om villkoret inte är sant.
 ```
-Om ett är större än två, skriv "Nej", annars skriv "Ett är inte större
-än två".
+Om ett lådan större än tio, skriv "Lådan är större än tio", annars skriv "Lådan är inte större än tio".
 ```
 
 ## Vägkarta
