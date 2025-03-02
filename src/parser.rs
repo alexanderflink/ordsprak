@@ -110,21 +110,13 @@ fn parse_if(input: &str) -> IResult<&str, Statement> {
     let (input, _) = tag(",")(input)?;
     let (input, _) = opt(multispace1).parse(input)?;
 
-    // TODO: move these separated_list into parser for readability
     // if statements
-    let (input, if_statements) = separated_list1(
-        delimited(multispace0, tag(","), multispace0),
-        parse_statement,
-    )
-    .parse(input)?;
+    let (input, if_statements) = parse_statement_list.parse(input)?;
 
     // else statement
     let (input, else_statements) = opt(preceded(
-        (tag(","), multispace0, tag("annars"), space1), // , annars
-        separated_list1(
-            delimited(multispace0, tag(","), multispace0),
-            parse_statement,
-        ),
+        (tag(","), multispace0, tag("annars"), space1),
+        parse_statement_list,
     ))
     .parse(input)?;
 
@@ -141,6 +133,14 @@ fn parse_if(input: &str) -> IResult<&str, Statement> {
             else_statements,
         },
     ))
+}
+
+fn parse_statement_list(input: &str) -> IResult<&str, Vec<Statement>> {
+    separated_list1(
+        delimited(multispace0, tag(","), multispace0),
+        parse_statement,
+    )
+    .parse(input)
 }
 
 fn parse_expression(input: &str) -> IResult<&str, Expression> {
