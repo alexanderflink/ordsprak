@@ -10,10 +10,16 @@ En mening börjar med stor bokstav och slutar med punkt.
 Skriv "Hej, världen!".
 ```
 
+Spara citat, nummer och andra värden i lådor. Lådor kan kallas vad som helst men
+får endast vara ett ord. I regel döps lådor till valfritt substantiv i bestämd form.
+```
+Spara fem i lådan.
+```
+
 Ett ordspråk kan bestå av flera meningar.
 ```
-Spara "ordspråk" i namn.
-Skriv "Hej, från " plus namn plus "!".
+Spara "Alexander" i namn.
+Skriv "Hej, jag heter " plus namn plus "!".
 ```
 
 Ett villkor är en mening som börjar med "Om", där villkoret kommer först, och
